@@ -7,7 +7,3 @@ Requirements
 ------------
 *    git
 *    php runtime
-
-
-
-

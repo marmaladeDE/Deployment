@@ -125,6 +125,8 @@ task(
         foreach (env('cleanup_files') as $cleanupFile) {
             run("rm -f $cleanupFile");
         }
+
+        run('rm -f {{release_path}}/config/deploy/id_rsa*');
     }
 );
 

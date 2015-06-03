@@ -6,6 +6,11 @@
 require 'recipe/common.php';
 require 'recipe/composer.php';
 
+env('git', []);
+env('shared_files', []);
+env('shared_dirs', []);
+env('app_sources', []);
+
 $baseDir    = dirname(__DIR__);
 $projectDir = dirname($baseDir);
 $configDir  = "$projectDir/config/deploy";
@@ -26,7 +31,7 @@ task(
             run("chmod og-rwx {{deploy_path}}/id_rsa.deploy");
             $gitPrivateKey = 'PKEY="{{deploy_path}}/id_rsa.deploy" GIT_SSH="{{deploy_path}}/ssh-git"';
         }
-        $branch = env('branch');
+        $branch = env('git.branch');
         if (input()->hasOption('tag')) {
             $tag = input()->getOption('tag');
         }
@@ -55,7 +60,7 @@ task(
         foreach (env('shared_dirs') as $sharedFolder) {
             $sharedFolders[] = $sharedFolder;
         }
-        set('shared_folders', $sharedFolders);
+        set('shared_dirs', $sharedFolders);
     }
 );
 

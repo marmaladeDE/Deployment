@@ -10,6 +10,7 @@ env('git', []);
 env('shared_files', []);
 env('shared_dirs', []);
 env('app_sources', []);
+env('database', []);
 
 $baseDir    = dirname(__DIR__);
 $projectDir = dirname($baseDir);
@@ -72,6 +73,8 @@ task(
         foreach ($appSources as $appSource) {
             $packageName = basename($appSource['url']);
 
+            writeln("Downloading package <info>{$appSource['url']}</info>.");
+
             if ('.tar.gz' == substr($packageName, -7)) {
                 $unpackCommand = "tar xf";
             } else if ('.tar.bz2' == substr($packageName, -8)) {
@@ -89,6 +92,9 @@ task(
             run("mv {{release_path}}/{$appSource['target_dir']} {{release_path}}/{$appSource['target_dir']}.git");
             run("wget '{$appSource['url']}' -O {{release_path}}/$packageName");
             $cleanupFiles[] = env('release_path') . "/$packageName";
+
+            writeln("Extracting package <info>{$packageName}</info> to <info>{$appSource['target_dir']}</info>.");
+
             run("mkdir {{release_path}}/{$appSource['target_dir']}");
             run("cd {{release_path}}/{$appSource['target_dir']} && {$unpackCommand} {{release_path}}/$packageName");
             run("cp -rf {{release_path}}/{$appSource['target_dir']}.git/* {{release_path}}/{$appSource['target_dir']}");
@@ -109,6 +115,61 @@ task(
 task(
     'deploy:db:update',
     function () {
+        $dbStatusFile = "../config/deploy/db-status.json";
+        $dbStatus = [];
+        if (file_exists($dbStatusFile)) {
+            $dbStatus = json_decode(file_get_contents($dbStatusFile), true);
+        }
+
+        $dbConfig = env('database');
+        $dbUser = isset($dbConfig['user']) ? "-u{$dbConfig['user']}" : "";
+        $dbPass = isset($dbConfig['password']) ? "-p{$dbConfig['password']}" : "";
+        $dbHost = isset($dbConfig['host']) ? "-h {$dbConfig['host']}" : "";
+        $dbPort = isset($dbConfig['port']) ? "-P {$dbConfig['port']}" : "";
+        $dbName = isset($dbConfig['database']) ? "{$dbConfig['database']}" : "";
+
+        $serverHost = env('server.host');
+        if (!isset($dbStatus[$serverHost])) {
+            $dbStatus[$serverHost] = [];
+        }
+
+        $sqlFiles = run("find {{release_path}}/archives/deploy/sql/ -iname '*.sql.gz'|sort -n")->toArray();
+        foreach ($sqlFiles as $sqlFile) {
+            if ('' == $sqlFile) {
+                continue;
+            }
+
+            $relativeSqlFile = str_replace(env('release_path'), '', $sqlFile);
+
+            if (in_array($relativeSqlFile, $dbStatus[$serverHost])) {
+                continue;
+            }
+
+            writeln("Applying database script <info>$relativeSqlFile</info>.");
+
+            run("gzip -dc $sqlFile | mysql $dbUser $dbPass $dbHost $dbPort $dbName");
+            $dbStatus[$serverHost][] = $relativeSqlFile;
+        }
+
+        $sqlFiles = run("find {{release_path}}/archives/deploy/sql/ -iname '*.sql'|sort -n")->toArray();
+        foreach ($sqlFiles as $sqlFile) {
+            if ('' == $sqlFile) {
+                continue;
+            }
+
+            $relativeSqlFile = str_replace(env('release_path'), '', $sqlFile);
+
+            if (in_array($relativeSqlFile, $dbStatus[$serverHost])) {
+                continue;
+            }
+
+            writeln("Applying database script <info>$relativeSqlFile</info>.");
+
+            run("mysql $dbUser $dbPass $dbHost $dbPort $dbName < $sqlFile");
+            $dbStatus[$serverHost][] = $relativeSqlFile;
+        }
+
+        file_put_contents($dbStatusFile, json_encode($dbStatus), JSON_PRETTY_PRINT);
     }
 )->desc('Updating the database.');
 

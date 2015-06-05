@@ -89,16 +89,16 @@ task(
                 );
             }
 
-            run("mv {{release_path}}/{$appSource['target_dir']} {{release_path}}/{$appSource['target_dir']}.git");
+            run("if [ -d {{release_path}}/{$appSource['target_dir']} ]; then mv {{release_path}}/{$appSource['target_dir']} {{release_path}}/{$appSource['target_dir']}.git; fi");
             run("wget '{$appSource['url']}' -O {{release_path}}/$packageName");
             $cleanupFiles[] = env('release_path') . "/$packageName";
 
             writeln("Extracting package <info>{$packageName}</info> to <info>{$appSource['target_dir']}</info>.");
 
-            run("mkdir {{release_path}}/{$appSource['target_dir']}");
+            run("mkdir -p {{release_path}}/{$appSource['target_dir']}");
             run("cd {{release_path}}/{$appSource['target_dir']} && {$unpackCommand} {{release_path}}/$packageName");
-            run("cp -rf {{release_path}}/{$appSource['target_dir']}.git/* {{release_path}}/{$appSource['target_dir']}");
-            run("cd {{release_path}}/{$appSource['target_dir']}.git && for f in $(find -regex '^.*/\\.[^\\.]*'); do cp -f \$f {{release_path}}/{$appSource['target_dir']}/\$f; done");
+            run("if [ -d {{release_path}}/{$appSource['target_dir']}.git ]; then cp -rf {{release_path}}/{$appSource['target_dir']}.git/* {{release_path}}/{$appSource['target_dir']}; fi");
+            run("if [ -d {{release_path}}/{$appSource['target_dir']}.git ]; then cd {{release_path}}/{$appSource['target_dir']}.git && for f in $(find -regex '^.*/\\.[^\\.]*'); do cp -f \$f {{release_path}}/{$appSource['target_dir']}/\$f; done; fi");
             run("rm -rf {{release_path}}/{$appSource['target_dir']}.git");
         }
 

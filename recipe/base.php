@@ -44,7 +44,7 @@ task(
             $at = "-b $branch";
         }
 
-        run("$gitPrivateKey git clone $at --depth 1 --recursive -q {{git.repository}} {{release_path}} 2>&1");
+        run("$gitPrivateKey git clone $at --depth 1 --recursive -q {{git.repository}} {{release_path}}/{{git.path}} 2>&1");
     }
 );
 
@@ -72,6 +72,7 @@ task(
         $cleanupFiles = [];
         foreach ($appSources as $appSource) {
             $packageName = basename($appSource['url']);
+            $packageRoot = isset($appSource['package_root']) ? $appSource['package_root'] : false;
 
             writeln("Downloading package <info>{$appSource['url']}</info>.");
 
@@ -97,6 +98,10 @@ task(
 
             run("mkdir -p {{release_path}}/{$appSource['target_dir']}");
             run("cd {{release_path}}/{$appSource['target_dir']} && {$unpackCommand} {{release_path}}/$packageName");
+            if ($packageRoot) {
+                run("mv {{release_path}}/{$appSource['target_dir']}/{$packageRoot}/* {{release_path}}/{$appSource['target_dir']}");
+                run("rm -rf {{release_path}}/{$appSource['target_dir']}/{$packageRoot}/");
+            }
             run("if [ -d {{release_path}}/{$appSource['target_dir']}.git ]; then cp -rf {{release_path}}/{$appSource['target_dir']}.git/* {{release_path}}/{$appSource['target_dir']}; fi");
             run("if [ -d {{release_path}}/{$appSource['target_dir']}.git ]; then cd {{release_path}}/{$appSource['target_dir']}.git && for f in $(find -regex '^.*/\\.[^\\.]*'); do cp -f \$f {{release_path}}/{$appSource['target_dir']}/\$f; done; fi");
             run("rm -rf {{release_path}}/{$appSource['target_dir']}.git");
@@ -122,6 +127,10 @@ task(
         }
 
         $dbConfig = env('database');
+        if (empty($dbConfig)) {
+            writeln("No database configured. Skipping step.");
+            return;
+        }
         $dbUser = isset($dbConfig['user']) ? "-u{$dbConfig['user']}" : "";
         $dbPass = isset($dbConfig['password']) ? "-p{$dbConfig['password']}" : "";
         $dbHost = isset($dbConfig['host']) ? "-h {$dbConfig['host']}" : "";

@@ -73,6 +73,10 @@ task(
         foreach ($appSources as $appSource) {
             $packageName = basename($appSource['url']);
             $packageRoot = isset($appSource['package_root']) ? $appSource['package_root'] : false;
+            $exclude = isset($appSource['exclude']) ? $appSource['exclude'] : false;
+            if ($exclude) {
+                $excludeCommand = '-x "' . implode('"  "', $exclude) . '"';
+            }
 
             writeln("Downloading package <info>{$appSource['url']}</info>.");
 
@@ -97,7 +101,7 @@ task(
             writeln("Extracting package <info>{$packageName}</info> to <info>{$appSource['target_dir']}</info>.");
 
             run("mkdir -p {{release_path}}/{$appSource['target_dir']}");
-            run("cd {{release_path}}/{$appSource['target_dir']} && {$unpackCommand} {{release_path}}/$packageName");
+            run("cd {{release_path}}/{$appSource['target_dir']} && {$unpackCommand} {{release_path}}/$packageName $excludeCommand");
             if ($packageRoot) {
                 run("mv {{release_path}}/{$appSource['target_dir']}/{$packageRoot}/* {{release_path}}/{$appSource['target_dir']}");
                 run("rm -rf {{release_path}}/{$appSource['target_dir']}/{$packageRoot}/");

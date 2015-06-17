@@ -26,6 +26,7 @@ task(
         upload('ssh-git', env('deploy_path') . '/ssh-git');
         run('chmod +x {{deploy_path}}/ssh-git');
         $git           = env('git');
+        $path          = isset($git['path']) ? $git['path'] : '';
         $gitPrivateKey = "";
         if (isset($git['identity_file'])) {
             upload($git['identity_file'], env('deploy_path') . '/id_rsa.deploy');
@@ -44,7 +45,7 @@ task(
             $at = "-b $branch";
         }
 
-        run("$gitPrivateKey git clone $at --depth 1 --recursive -q {{git.repository}} {{release_path}}/{{git.path}} 2>&1");
+        run("$gitPrivateKey git clone $at --depth 1 --recursive -q {{git.repository}} {{release_path}}/{$path} 2>&1");
     }
 );
 

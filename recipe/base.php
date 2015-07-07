@@ -11,6 +11,7 @@ env('shared_files', []);
 env('shared_dirs', []);
 env('app_sources', []);
 env('database', []);
+env('use_composer', false);
 
 $baseDir    = dirname(__DIR__);
 $projectDir = dirname($baseDir);
@@ -50,6 +51,24 @@ task(
 );
 
 task(
+    'deploy:vendors',
+    function () {
+        if (!env('use_composer')) {
+            return;
+        }
+
+        if (commandExist('composer')) {
+            $composer = 'composer';
+        } else {
+            run("cd {{release_path}} && curl -sS https://getcomposer.org/installer | php");
+            $composer = 'php composer.phar';
+        }
+
+        run("cd {{release_path}} && $composer install --prefer-dist --no-dev");
+    }
+)->desc('Installing vendors');
+
+task(
     'deploy:prepare:shared',
     function () {
         $sharedFiles = [];
@@ -69,12 +88,13 @@ task(
 task(
     'deploy:app_sources',
     function () {
-        $appSources = env('app_sources');
+        $appSources   = env('app_sources');
         $cleanupFiles = [];
         foreach ($appSources as $appSource) {
-            $packageName = basename($appSource['url']);
-            $packageRoot = isset($appSource['package_root']) ? $appSource['package_root'] : false;
-            $exclude = isset($appSource['exclude']) ? $appSource['exclude'] : false;
+            $packageName    = basename($appSource['url']);
+            $packageRoot    = isset($appSource['package_root']) ? $appSource['package_root'] : false;
+            $exclude        = isset($appSource['exclude']) ? $appSource['exclude'] : false;
+            $excludeCommand = "";
             if ($exclude) {
                 $excludeCommand = '-x "' . implode('"  "', $exclude) . '"';
             }
@@ -95,20 +115,30 @@ task(
                 );
             }
 
-            run("if [ -d {{release_path}}/{$appSource['target_dir']} ]; then mv {{release_path}}/{$appSource['target_dir']} {{release_path}}/{$appSource['target_dir']}.git; fi");
+            run(
+                "if [ -d {{release_path}}/{$appSource['target_dir']} ]; then mv {{release_path}}/{$appSource['target_dir']} {{release_path}}/{$appSource['target_dir']}.git; fi"
+            );
             run("wget '{$appSource['url']}' -O {{release_path}}/$packageName");
             $cleanupFiles[] = env('release_path') . "/$packageName";
 
             writeln("Extracting package <info>{$packageName}</info> to <info>{$appSource['target_dir']}</info>.");
 
             run("mkdir -p {{release_path}}/{$appSource['target_dir']}");
-            run("cd {{release_path}}/{$appSource['target_dir']} && {$unpackCommand} {{release_path}}/$packageName $excludeCommand");
+            run(
+                "cd {{release_path}}/{$appSource['target_dir']} && {$unpackCommand} {{release_path}}/$packageName $excludeCommand"
+            );
             if ($packageRoot) {
-                run("mv {{release_path}}/{$appSource['target_dir']}/{$packageRoot}/* {{release_path}}/{$appSource['target_dir']}");
+                run(
+                    "mv {{release_path}}/{$appSource['target_dir']}/{$packageRoot}/* {{release_path}}/{$appSource['target_dir']}"
+                );
                 run("rm -rf {{release_path}}/{$appSource['target_dir']}/{$packageRoot}/");
             }
-            run("if [ -d {{release_path}}/{$appSource['target_dir']}.git ]; then cp -rf {{release_path}}/{$appSource['target_dir']}.git/* {{release_path}}/{$appSource['target_dir']}; fi");
-            run("if [ -d {{release_path}}/{$appSource['target_dir']}.git ]; then cd {{release_path}}/{$appSource['target_dir']}.git && for f in $(find -regex '^.*/\\.[^\\.]*'); do cp -f \$f {{release_path}}/{$appSource['target_dir']}/\$f; done; fi");
+            run(
+                "if [ -d {{release_path}}/{$appSource['target_dir']}.git ]; then cp -rf {{release_path}}/{$appSource['target_dir']}.git/* {{release_path}}/{$appSource['target_dir']}; fi"
+            );
+            run(
+                "if [ -d {{release_path}}/{$appSource['target_dir']}.git ]; then cd {{release_path}}/{$appSource['target_dir']}.git && for f in $(find -regex '^.*/\\.[^\\.]*'); do cp -f \$f {{release_path}}/{$appSource['target_dir']}/\$f; done; fi"
+            );
             run("rm -rf {{release_path}}/{$appSource['target_dir']}.git");
         }
 
@@ -126,7 +156,7 @@ task(
     'deploy:db:update',
     function () {
         $dbStatusFile = "../config/deploy/db-status.json";
-        $dbStatus = [];
+        $dbStatus     = [];
         if (file_exists($dbStatusFile)) {
             $dbStatus = json_decode(file_get_contents($dbStatusFile), true);
         }
@@ -134,6 +164,7 @@ task(
         $dbConfig = env('database');
         if (empty($dbConfig)) {
             writeln("No database configured. Skipping step.");
+
             return;
         }
         $dbUser = isset($dbConfig['user']) ? "-u{$dbConfig['user']}" : "";
@@ -234,6 +265,7 @@ task(
         'deploy:release',
         'deploy:update_code',
         'deploy:app_sources',
+        'deploy:vendors',
         'deploy:shared',
         'deploy:db:create-tag',
         'deploy:db:update',

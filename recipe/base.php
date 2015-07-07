@@ -11,7 +11,7 @@ env('shared_files', []);
 env('shared_dirs', []);
 env('app_sources', []);
 env('database', []);
-env('use_composer', false);
+env('php_bin', 'php');
 
 $baseDir    = dirname(__DIR__);
 $projectDir = dirname($baseDir);
@@ -49,24 +49,6 @@ task(
         run("$gitPrivateKey git clone $at --depth 1 --recursive -q {{git.repository}} {{release_path}}/{$path} 2>&1");
     }
 );
-
-task(
-    'deploy:vendors',
-    function () {
-        if (!env('use_composer')) {
-            return;
-        }
-
-        if (commandExist('composer')) {
-            $composer = 'composer';
-        } else {
-            run("cd {{release_path}} && curl -sS https://getcomposer.org/installer | php");
-            $composer = 'php composer.phar';
-        }
-
-        run("cd {{release_path}} && $composer install --prefer-dist --no-dev");
-    }
-)->desc('Installing vendors');
 
 task(
     'deploy:prepare:shared',
@@ -247,8 +229,8 @@ task(
         if (commandExist('composer')) {
             $composer = 'composer';
         } else {
-            run("cd {{release_path}} && curl -sS https://getcomposer.org/installer | php");
-            $composer = 'php composer.phar';
+            run("cd {{release_path}} && curl -sS https://getcomposer.org/installer | {{php_bin}}");
+            $composer = '{{php_bin}} composer.phar';
         }
 
         run(
@@ -265,7 +247,6 @@ task(
         'deploy:release',
         'deploy:update_code',
         'deploy:app_sources',
-        'deploy:vendors',
         'deploy:shared',
         'deploy:db:create-tag',
         'deploy:db:update',

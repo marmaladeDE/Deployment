@@ -174,7 +174,7 @@ task(
 
             writeln("Applying database script <info>$relativeSqlFile</info>.");
 
-            run("gzip -dc $sqlFile | mysql $dbUser $dbPass $dbHost $dbPort $dbName");
+            run("gzip -dc $sqlFile | mysql $dbUser $dbPass $dbHost $dbPort $dbName -f");
             $dbStatus[$serverHost][] = $relativeSqlFile;
         }
 
@@ -192,7 +192,7 @@ task(
 
             writeln("Applying database script <info>$relativeSqlFile</info>.");
 
-            run("mysql $dbUser $dbPass $dbHost $dbPort $dbName < $sqlFile");
+            run("mysql $dbUser $dbPass $dbHost $dbPort $dbName -f < $sqlFile");
             $dbStatus[$serverHost][] = $relativeSqlFile;
         }
 

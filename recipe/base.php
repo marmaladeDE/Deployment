@@ -137,10 +137,17 @@ task(
 task(
     'deploy:db:update',
     function () {
-        $dbStatusFile = "../config/deploy/db-status.json";
+        $dbStatusFile = "{{deploy_path}}/shared/db-status.json";
+        $filePath = run("readlink -f {$dbStatusFile}")->toString();
         $dbStatus     = [];
-        if (file_exists($dbStatusFile)) {
-            $dbStatus = json_decode(file_get_contents($dbStatusFile), true);
+        if ('' !== $filePath) {
+            $dbStatusJson = run("cat {{deploy_path}}/shared/db-status.json")->toString();
+            $dbStatus = json_decode($dbStatusJson, true);
+        } else {
+            $dbStatusFile = "../config/deploy/db-status.json";
+            if (file_exists($dbStatusFile)) {
+                $dbStatus = json_decode(file_get_contents($dbStatusFile), true);
+            }
         }
 
         $dbConfig = env('database');
@@ -195,8 +202,9 @@ task(
             run("mysql $dbUser $dbPass $dbHost $dbPort $dbName -f < $sqlFile");
             $dbStatus[$serverHost][] = $relativeSqlFile;
         }
-
-        file_put_contents($dbStatusFile, json_encode($dbStatus), JSON_PRETTY_PRINT);
+        $statusFile = tempnam(sys_get_temp_dir(),'db-status');
+        file_put_contents($statusFile, json_encode($dbStatus), JSON_PRETTY_PRINT);
+        upload($statusFile, env('deploy_path').'/shared/db-status.json');
     }
 )->desc('Updating the database.');
 

@@ -5,3 +5,4 @@
 
 require 'recipe/base.php';
 require 'recipe/local.php';
+require 'recipe/download.php';

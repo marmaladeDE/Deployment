@@ -47,9 +47,9 @@ serverName:
 
 ### Download commands
 
-| Command                                       |   Description                         |
-|:--------------------------------------------- |:------------------------------------- |
-| php deployer.phar download:database <server>  | Downloads database dump               |
-| php deployer.phar download:files <server>     | Downloads configured files            |
-| php deployer.phar download:folders <server>   | Downloads configured folders          |
-| php deployer.phar download:files:all <server> | Downloads configured files & folders  |
+| Command                                           |   Description                         |
+|:------------------------------------------------- |:------------------------------------- |
+| php deployer.phar download:database serverName    | Downloads database dump               |
+| php deployer.phar download:files serverName       | Downloads configured files            |
+| php deployer.phar download:folders serverName     | Downloads configured folders          |
+| php deployer.phar download:files:all serverName   | Downloads configured files & folders  |

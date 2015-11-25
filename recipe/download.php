@@ -34,7 +34,7 @@ task("download:files", function() {
     if (isset($download['files']) && is_array($download)) {
         $downloadDir = getDownloadDir();
         foreach ($download['files'] as $fileName) {
-            download($downloadDir . $fileName, env('deploy_path') . "/" . $fileName);
+            download($downloadDir . end(explode('/', $fileName)), env('deploy_path') . "/" . $fileName);
         }
     }
 })->desc("Downloading files");
@@ -44,6 +44,7 @@ task("download:folders", function() {
     if (isset($download['folders']) && is_array($download)) {
         $downloadDir = getDownloadDir();
         foreach ($download['folders'] as $folderName) {
+            $folderName = rtrim($folderName, '/');
             cd("{{deploy_path}}");
             run("tar -zcf {$folderName}.tar.gz $folderName");
             $fileName = end(explode('/', $folderName));

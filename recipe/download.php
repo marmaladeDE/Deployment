@@ -22,7 +22,7 @@ task("download:database", function() {
         $dumpName = time() . '_db.sql';
         $downloadDir = getDownloadDir();
         foreach ($databaseConfiguration as $dbName => $dbCredential) {
-            run("mysqldump -u {$dbCredential['user']} -p{$dbCredential['password']} {$dbName} > {{deploy_path}}/{$dumpName}");
+            run("mysqldump --hex-blob -u {$dbCredential['user']} -p{$dbCredential['password']} {$dbName} > {{deploy_path}}/{$dumpName}");
             download($downloadDir . $dumpName, env('deploy_path') ."/".$dumpName);
             run("rm {{deploy_path}}/{$dumpName}");
         }

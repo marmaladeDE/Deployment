@@ -78,7 +78,7 @@ task(
             $exclude        = isset($appSource['exclude']) ? $appSource['exclude'] : false;
             $excludeCommand = "";
             if ($exclude) {
-                $excludeCommand = '-x "' . implode('"  "', $exclude) . '"';
+                $excludeCommand = '--exclude="' . implode('" --exclude="', $exclude) . '"';
             }
 
             writeln("Downloading package <info>{$appSource['url']}</info>.");
@@ -91,6 +91,9 @@ task(
                 $unpackCommand = "tar xf";
             } else if ('.zip' == substr($packageName, -4)) {
                 $unpackCommand = "unzip";
+                if ($exclude) {
+                    $excludeCommand = '-x "' . implode('" "', $exclude) . '"';
+                }
             } else {
                 throw new \InvalidArgumentException(
                     "Unsupported package-type '{$packageName}'! Supported types are: .zip, .tar.gz, .tar.bz2 and .tar"

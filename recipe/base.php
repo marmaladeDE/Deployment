@@ -159,11 +159,11 @@ task(
 
             return;
         }
-        $dbUser = isset($dbConfig['user']) ? "-u{$dbConfig['user']}" : "";
-        $dbPass = isset($dbConfig['password']) ? "-p{$dbConfig['password']}" : "";
+        $dbUser = isset($dbConfig['user']) ? escapeshellarg("-u{$dbConfig['user']}") : "";
+        $dbPass = isset($dbConfig['password']) ? escapeshellarg("-p{$dbConfig['password']}") : "";
         $dbHost = isset($dbConfig['host']) ? "-h {$dbConfig['host']}" : "";
         $dbPort = isset($dbConfig['port']) ? "-P {$dbConfig['port']}" : "";
-        $dbName = isset($dbConfig['database']) ? "{$dbConfig['database']}" : "";
+        $dbName = isset($dbConfig['database']) ? escapeshellarg("{$dbConfig['database']}") : "";
 
         $serverHost = env('server.host');
         if (!isset($dbStatus[$serverHost])) {

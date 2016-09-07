@@ -132,6 +132,18 @@ task(
 );
 
 task(
+    'deploy:write_revision',
+    function () {
+        $rev = env('git.branch');
+        if (input()->hasOption('tag')) {
+            $rev = input()->getOption('tag');
+        }
+
+        run("echo '{$rev}' > {{release_path}}/.rev");
+    }
+);
+
+task(
     'deploy:db:create-tag',
     function () {
     }
@@ -270,3 +282,8 @@ task(
 );
 
 task('rollback', array('deploy:db:rollback', 'rollback'));
+
+if (file_exists(__DIR__ . '/../../config/deploy/recipe/custom.php')) {
+    include __DIR__ . '/../../config/deploy/recipe/custom.php';
+    after('deploy:app_sources', 'deploy:custom');
+}

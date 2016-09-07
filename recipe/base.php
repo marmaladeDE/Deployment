@@ -270,6 +270,7 @@ task(
         'deploy:release',
         'deploy:update_code',
         'deploy:app_sources',
+        'deploy:write_revision',
         'deploy:shared',
         'deploy:db:create-tag',
         'deploy:db:update',

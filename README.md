@@ -53,3 +53,29 @@ serverName:
 | php deployer.phar download:files serverName       | Downloads configured files            |
 | php deployer.phar download:folders serverName     | Downloads configured folders          |
 | php deployer.phar download:files:all serverName   | Downloads configured files & folders  |
+
+### Add custom deployment tasks
+1. Create a PHP file `../config/deploy/recipe/custom.php`.
+2. Create a new deployer task `deploy:custom`. This can be a task itself or a group of tasks.
+
+#### Single Task
+```php
+<?php
+task('deploy:custom', function() {
+    // Put your task definition here.
+});
+```
+
+#### Multiple Task
+```php
+<?php
+task('deploy:custom:step1', function() {
+    // Put your task definition here.
+});
+
+task('deploy:custom:step2', function() {
+    // Put your task definition here.
+});
+
+task('deploy:custom', ['deploy:custom:step1', 'deploy:custom:step2']);
+```
